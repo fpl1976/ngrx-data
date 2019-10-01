@@ -21,23 +21,51 @@ import {MatCardModule} from '@angular/material/card';
 import {MatButtonModule} from '@angular/material/button';
 import {MatIconModule} from '@angular/material/icon';
 import {RouterModule, Routes} from '@angular/router';
-import { EntityDataService, EntityDefinitionService, EntityMetadataMap} from '@ngrx/data';
+import { EntityDataService, EntityDefinitionService, EntityMetadataMap, EntityDataModule} from '@ngrx/data';
 import {compareCourses, Course} from './model/course';
 
 import {compareLessons, Lesson} from './model/lesson';
+import { CourseEntityService } from './services/course-entity.service';
+import { CoursesResolver } from './services/courses.resolver';
+import { CoursesDataService } from './services/courses-data.service';
+import { LessonEntityService } from './services/lesson-entity.service';
 
 
 export const coursesRoutes: Routes = [
   {
     path: '',
-    component: HomeComponent
+    component: HomeComponent,
+    resolve: {
+      courses: CoursesResolver
+    }
 
   },
   {
     path: ':courseUrl',
-    component: CourseComponent
+    component: CourseComponent,
+    resolve: {
+      courses: CoursesResolver
+    }
   }
 ];
+
+const entityMetadata: EntityMetadataMap = {
+  Course: {
+    sortComparer: compareCourses,
+    entityDispatcherOptions: {
+      optimisticUpdate: true,
+      optimisticAdd: false,
+      optimisticDelete: true
+    }
+  },
+  Lesson: {
+    sortComparer: compareLessons,
+    entityDispatcherOptions: {
+      optimisticUpdate: true,
+      optimisticDelete: true
+    }
+  }
+};
 
 @NgModule({
   imports: [
@@ -73,12 +101,23 @@ export const coursesRoutes: Routes = [
   ],
   entryComponents: [EditCourseDialogComponent],
   providers: [
-    CoursesHttpService
+    CoursesHttpService,
+    CourseEntityService,
+    LessonEntityService,
+    CoursesDataService,
+    CoursesResolver
   ]
 })
 export class CoursesModule {
 
-  constructor() {
+  constructor(
+    eds: EntityDefinitionService,
+    entityDataService: EntityDataService,
+    coursesDataService: CoursesDataService) {
+
+    eds.registerMetadataMap(entityMetadata);
+    entityDataService.registerService('Course', coursesDataService);
+    entityDataService.registerService('Lesson', null);
 
   }
 
